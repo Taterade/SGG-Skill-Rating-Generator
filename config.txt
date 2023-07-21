@@ -1,5 +1,0 @@
-challongeid=taterade
-challongekey=tlBXJYsd6CKzwgimjJFkqKGjHVwmfmWFdKmgKqsQ
-startggid=
-startggkey=eeaace329e9107d74834d350611c8dde
-gameid=43868
