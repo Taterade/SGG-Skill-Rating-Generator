@@ -70,39 +70,39 @@ def getPlayerName(slug):
 	}}""".format(slug = slug)
 	return make_query(query)
 knownNames = {}
-#TODO open the names.csv file, if it doesn't exist make one and open that
-#also read all existing discriminator and name pairings into key array
-try:
-	e = open("names.csv", 'r', encoding="utf-8")
-	names = 0
-	for line in e:
-		data = line[:-1].split(",")
-		knownNames[data[0]] = data[1]
-		names += 1
-	print(str(names) + " known names")
-	e.close()
-except: 
-	print("names.csv not found, creating file")
-	#e = open("names.csv", 'w', encoding="utf-8")
-	#e.close()
-	
-#TODO loop through all discriminator that do not have a name attached already and append them to names.csv 
-f = open("trueskillrankings.csv", 'r', encoding="utf-8")
-e = open("names.csv", 'a', encoding="utf-8")
-for line in f:
-	data = line.split(",")
-	if data[0] in knownNames:
-		continue
-	else:
-		try:
-			result = getPlayerName("\"user/" + data[0] + "\"").json()
-		except:
-			continue
-		if result["data"]["user"] == None:
+def processnames(): 
+	#TODO open the names.csv file, if it doesn't exist make one and open that
+	#also read all existing discriminator and name pairings into key array
+	try:
+		e = open("names.csv", 'r', encoding="utf-8")
+		names = 0
+		for line in e:
+			data = line[:-1].split(",")
+			knownNames[data[0]] = data[1]
+			names += 1
+		print(str(names) + " known names")
+		e.close()
+	except: 
+		print("names.csv not found, creating file")
+		#e = open("names.csv", 'w', encoding="utf-8")
+		#e.close()
+		
+	#TODO loop through all discriminator that do not have a name attached already and append them to names.csv 
+	f = open("trueskillrankings.csv", 'r', encoding="utf-8")
+	e = open("names.csv", 'a', encoding="utf-8")
+	for line in f:
+		data = line.split(",")
+		if data[0] in knownNames:
 			continue
 		else:
-			e.write(data[0] + "," + result["data"]["user"]["player"]["gamerTag"] + "\n")
-			logging.debug("added " + data[0] + "," + result["data"]["user"]["player"]["gamerTag"] + " to the names.csv write operations")
-e.close()
-f.close()
-
+			try:
+				result = getPlayerName("\"user/" + data[0] + "\"").json()
+			except:
+				continue
+			if result["data"]["user"] == None:
+				continue
+			else:
+				e.write(data[0] + "," + result["data"]["user"]["player"]["gamerTag"] + "\n")
+				logging.debug("added " + data[0] + "," + result["data"]["user"]["player"]["gamerTag"] + " to the names.csv write operations")
+	e.close()
+	f.close()

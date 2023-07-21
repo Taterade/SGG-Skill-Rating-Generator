@@ -243,5 +243,3 @@ def startggscrub():
 	os.chdir("../")
 	print("Finished iterating through matches")
 	return()
-
-startggscrub()

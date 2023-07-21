@@ -238,5 +238,3 @@ def seeder(mode, burl):
 		s.close()
 		i.close()
 		os.chdir("../")
-#TODO remove when GUI remake is done to call seeder
-seeder("-s", "https://www.start.gg/tournament/sf6-game-realms-7-14/event/street-fighter-6")
