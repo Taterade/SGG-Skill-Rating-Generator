@@ -1,0 +1,1 @@
+Program and functions for retreiving all completed tournaments for a game via start gg API and ranking the players using the Trueskill Rating system. Includes functionality for using this processed data to seed tournaments into either a suggested order output file or directly to a start gg bracket with the API.

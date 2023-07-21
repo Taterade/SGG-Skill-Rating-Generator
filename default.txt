@@ -1,0 +1,5 @@
+challongeid=
+challongekey=
+startggid=
+startggkey=
+gameid=
