@@ -1,7 +1,8 @@
+import os, sys
 import tkinter as tk
 import startgg_scrubber as gg
 import namestorage as nm
-import startggapplyseeding as seed
+import startgg_apply_seeding as seed
 import trueskill_rating_generator as tsr
 import seedgenerator as sg
 #read config.txt for required API credntials or throw an error while generating the file
@@ -28,59 +29,58 @@ try:
 		raise Exception()
 except:
 	try:
-		if os.path.isFile("config.txt"):
-			sys.exit("Error reading config.txt, either remake the file using default.txt template or delete to allow program to auto remake it.")
+		if os.path.isfile("config.txt"):
+			exit("Error reading config.txt, either remake the file using default.txt template or delete to allow program to auto remake it.")
 		else:
 			f=open("config.txt", "x")
 			f.write("challongeid=\nchallongekey=\nstarggid=\nstartggkey=\ngameid=")
 			f.close()
 	except:
-		sys.exit("Config file read error and config file generation error")
-	sys.exit("config.txt error, enter your challonge and startgg credentials into the generated file")
+		exit("Config file read error and config file generation error")
+	exit("config.txt error, enter your challonge and startgg credentials into the generated file")
 auth_token = skey
 window = tk.Tk()
+window.title("Spiritual Phenomena Observatory")
 bracketurl = ""
 bracketid = ""
 
-	
-greeting = tk.Label(text="Bracket Seeder", fg="white", bg="black")
-greeting.pack()
+
 startggbtn= tk.Button(
 		text="Update matches from StartGG",
 		fg="yellow",
 		bg="black"
 		)
 startggbtn.pack()
-nameMergebtn= tk.Button(
-		text="Clean up names and merge StarttGG and Challonge",
-		fg="yellow",
-		bg="black"
-		)
-nameMergebtn.pack()
 ratingbtn= tk.Button(
 		text="Generate Trueskill Ratings",
 		fg="yellow",
 		bg="black"
 		)
 ratingbtn.pack()
-rigbtn= tk.Button(
+nameMergebtn= tk.Button(
+		text="Retrieve display names for Descriminators",
+		fg="yellow",
+		bg="black"
+		)
+nameMergebtn.pack()
+seedbtn= tk.Button(
 		text="Generate Seed Order in Seeding.txt",
 		fg="yellow",
 		bg="black"
 		)
-rigbtn.pack()
-paperrig = tk.Button(
+seedbtn.pack()
+paperseed = tk.Button(
 		text="Generate Seed Order from Text File",
 		fg="yellow",
 		bg="black"
 		)
-paperrig.pack()
-seedbtn = tk.Button(
+paperseed.pack()
+seedapplybtn = tk.Button(
 		text="API seed a startgg bracket",
 		fg="yellow",
 		bg="black"
 		)
-seedbtn.pack()
+seedapplybtn.pack()
 bracketLinkLabel = tk.Label(text="Bracket URL Link")
 bracketLinkLabel.pack()
 bracketURLEntry = tk.Entry()
@@ -100,7 +100,7 @@ def loadLog():
 			bracketid = data[1]
 			bracketURLEntry.insert(1, bracketurl)
 			bracketIDEntry.insert(1, bracketid)
-			print("Loaded UI cahce")
+			print("Loaded UI cache")
 		o.close()
 	except:
 		return
@@ -119,27 +119,27 @@ def saveLog():
 	return
 def startggscrub_click(event):
 	print("Scrubbing StartGG")
-	gg.startggscrub()
+	gg.startggscrub(sg_id, skey)
 def namemerge_click(event):
 	print("Matching Descriminators to Names")
-	nm.processnames()
+	nm.processnames(sg_id, skey)
 def rating_click(event):
 	print("Generating scores")
 	tsr.tsrate()
 nameMergebtn.bind("<Button-1>", namemerge_click)
 startggbtn.bind("<Button-1>", startggscrub_click)
 ratingbtn.bind("<Button-1>", rating_click)
-def rig_click(event):
+def seed_click(event):
 	print("Creating seed order from StartGG bracket URL")
 	saveLog()
-	sg.seeder("-s", bracketURLEntry.get())
-rigbtn.bind("<Button-1>", rig_click)
-def paperrig_click(event):
+	sg.seeder("-s", bracketURLEntry.get(), sg_id, skey)
+seedbtn.bind("<Button-1>", seed_click)
+def paperseed_click(event):
 	print("Creating seed order from provided seed input file")
 	saveLog()
-	sg.seeder("-paperbracketmode", "CB2023.txt")
-paperrig.bind("<Button-1>", paperrig_click)
-def seed_click(event):
+	sg.seeder("-paperbracketmode", "CB2023.txt", sg_id, skey)
+paperseed.bind("<Button-1>", paperseed_click)
+def seed_apply_click(event):
 	print("Applying seed to bracket over API")
 	saveLog()
 	seed.applySeed(bracketIDEntry.get())

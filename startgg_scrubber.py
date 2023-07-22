@@ -1,76 +1,12 @@
-import requests
-import json
-import os
-import logging
+import requests, logging, os, json
+import SPO_functions as SPO
 from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
 #entire script is a function to account for a future GUI calling it
-def startggscrub():
+def startggscrub(sggGameID, skey):
 	logging.basicConfig(filename='startgg_scrubber.log', encoding='utf-8', level=logging.DEBUG)
-	#read config.txt for required API credntials or throw an error while generating the file
-	#TODO replace this with variables being passed from main thread when called
-	try:
-		with open("config.txt", "r") as config:
-			for line in config:
-				name, var = line.partition("=")[::2]
-				var.strip()
-				#TODO switch this for just raw mapping key=value pairs instead of if statments and ignore comment lines in the file
-				if name == "challongeid":
-					cid = var
-					cid = cid.rstrip()
-				elif name == "challongekey":
-					ckey = var
-					ckey = ckey.rstrip()
-				elif name == "startggkey":
-					skey = var
-					skey = skey.rstrip()
-				#TODO rename these variables and all instances of them to not be SG specific
-				elif name == "gameid":
-					sg_id = var
-					sg_id = sg_id.rstrip()
-					sg2_id = sg_id
-		#sanity check startgg key because it is the only value neccesary
-		if len(skey) < 3:
-			raise Exception()
-	#TODO replace the string write with an default file copy
-	#On any failure of reading the file recreates it. Change this to non destructive so edge cases
-	#can fix it manually without retreiving API keys again
-	except:
-		try:
-			f=open("config.txt", "x")
-			f.write("challongeid=\nchallongekey=\nstarggid=\nstartggkey=\ngameid=")
-			f.close()
-		except:
-			exit
-		sys.exit("config.txt error, enter your challonge and startgg credentials into the generated file")
-	#Store startgg key in a better named variable
-	auth_token = skey
-
-	#Start gg api url, possible updates in the future
-	api_url = "https://api.start.gg/gql/alpha"
 	os.makedirs("data", exist_ok = True)
 	os.chdir('./data')
-	#TODO also swap based on current game sggid so multiple games can be 
-	# tracked in their own directory
-
-	#TODO make this repeat a query automatically up to 
-	# 5 times on 503 to account for server API errors.
-	@on_exception(expo, Exception, max_time=61)
-	@limits(calls=80, period=61)
-	def make_query(query):
-		response = requests.post(api_url,
-					  headers = {"Authorization": "Bearer " + auth_token},
-					  json={"query": query})
-		if response.status_code == 429:
-			raise Exception()
-		elif response.status_code == 200:
-			return response
-		elif response.status_code == 503:
-			return response
-		else:
-			print(response.status_code)
-			print(response.text)
-			exit()
 
 	#Query for getting all tournaments of a specified game
 	def TournamentsByVideogame(page, perPage, gameId):
@@ -106,7 +42,7 @@ def startggscrub():
 			}}
 		}}
 		""".format(page = page, perPage = perPage, gameId = gameId)
-		return make_query(query)
+		return SPO.make_query(query, skey)
 
 	#Query that requests all sets in a tournament
 	def ParseSets(page, perPage, eventId):
@@ -147,7 +83,7 @@ def startggscrub():
 				}}
 			}}
 		}}""".format(page = page, perPage = perPage, eventId = eventId)
-		return make_query(query)
+		return SPO.make_query(query, skey)
 
 
 	print("--- Starting start.gg Scrubber ---")
@@ -170,7 +106,7 @@ def startggscrub():
 	cont = True
 	count = 1
 	while cont:
-		result = TournamentsByVideogame(count, 100, sg2_id)
+		result = TournamentsByVideogame(count, 100, sggGameID)
 		count += 1
 
 		if "data" in result.text:
@@ -194,6 +130,7 @@ def startggscrub():
 	logging.debug(str(len(eventIds)) + " events found")
 	if len(eventIds) == 0:
 		os.chdir("../")
+		print("Returning to main")
 		return()
 	print("\n--- Iterating Through Event Ids ---")
 

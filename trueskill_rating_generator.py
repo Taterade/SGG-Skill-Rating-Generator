@@ -1,59 +1,11 @@
-import csv, os, logging, requests, json
+import csv, os, logging, requests, json, sys
 from trueskill import Rating, quality_1vs1, rate_1vs1
 from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
+import SPO_functions as SPO
 logging.basicConfig(filename='startgg_scrubber.log', encoding='utf-8', level=logging.DEBUG)
-#read config.txt for required API credntials or throw an error while generating the file
-#TODO replace this with variables being passed from main thread when called
-try:
-	
-	with open("config.txt", "r") as config:
-		for line in config:
-			name, var = line.partition("=")[::2]
-			var.strip()
-			if name == "challongeid":
-				cid = var
-				cid = cid.rstrip()
-			if name == "challongekey":
-				ckey = var
-				ckey = ckey.rstrip()
-			if name == "startggkey":
-				skey = var
-				skey = skey.rstrip()
-			if name == "gameid":
-				sg_id = var
-				sg_id = sg_id.rstrip()
-				sg2_id = sg_id
-	if len(skey) < 3:
-		raise Exception()
-except:
-	try:
-		f=open("config.txt", "x")
-		f.write("challongeid=\nchallongekey=\nstarggid=\nstartggkey=\ngameid=")
-		f.close()
-	except:
-		exit
-	sys.exit("config.txt error, enter your challonge and startgg credentials into the generated file")
-auth_token = skey
 
 	
-api_url = "https://api.start.gg/gql/alpha"
-@on_exception(expo, Exception, max_time=61)
-@limits(calls=80, period=61)
-def make_query(query):
-	response = requests.post(api_url,
-					headers = {"Authorization": "Bearer " + auth_token},
-					json={"query": query})
-	if response.status_code == 429:
-		raise Exception()
-	elif response.status_code == 200:
-		return response
-	elif response.status_code == 503:
-		return response
-	else:
-		print(response.status_code)
-		print(response.text)
-		exit()
 def getPlayerName(slug):
 	query = """query GetUserName
 	{{
@@ -66,7 +18,7 @@ def getPlayerName(slug):
 			}}
 		}}
 	}}""".format(slug = slug)
-	return make_query(query)
+	return SPO.make_query(query)
 def tsrate():
 	os.makedirs("data", exist_ok = True)
 	os.chdir('./data')
@@ -141,4 +93,3 @@ def tsrate():
 			print("%s broke everything\n" % item[0])
 	r.close()
 	os.chdir("../")
-tsrate()

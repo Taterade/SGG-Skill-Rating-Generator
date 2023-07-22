@@ -1,5 +1,6 @@
 import challonge #challonge python integration from ZEDGR: https://github.com/ZEDGR/pychallonge
 import time, logging
+import SPO_functions as SPO
 import datetime
 from trueskill import Rating, quality_1vs1, rate_1vs1
 import csv
@@ -12,50 +13,8 @@ from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
 logging.basicConfig(filename='startgg_scrubber.log', encoding='utf-8', level=logging.DEBUG)
 
-#read config.txt for required API credntials or throw an error while generating the file
-#TODO replace this with variables being passed from main thread when called
-try:
-	with open("config.txt", "r") as config:
-		for line in config:
-			name, var = line.partition("=")[::2]
-			var.strip()
-			if name == "challongeid":
-				cid = var
-				cid = cid.rstrip()
-			if name == "challongekey":
-				ckey = var
-				ckey = ckey.rstrip()
-			if name == "startggkey":
-				skey = var
-				skey = skey.rstrip()
-	if len(cid) < 3 or len(ckey) < 3 or len(skey) < 3:
-		raise Exception()
-except:
-	try:
-		f=open("config.txt", "x")
-		f.write("challongeid=\nchallongekey=\nstarggid=\nstartggkey=\ngameid=")
-		f.close()
-	except:
-		exit
-	sys.exit("config.txt error, enter your challonge and startgg credentials into the generated file")
-auth_token = skey
-sg2_id = 32
-api_url = "https://api.start.gg/gql/alpha"
-#TODO merge all instances of this into an import
-@on_exception(expo, Exception, max_time=61)
-@limits(calls=80, period=61)
-def make_query(query):
-    response = requests.post(api_url,
-                  headers = {"Authorization": "Bearer " + auth_token},
-                  json={"query": query})
-    if response.status_code == 429:
-        raise Exception()
-    elif response.status_code == 200:
-        return response
-    else:
-        print(response.status_code)
-        print(response.text)
-        exit()
+
+
 #returns just the Startgg internal ID for an event using the url
 def GetEventID(trn):
 	with urllib.request.urlopen("https://api.smash.gg/%s" % trn) as url:
@@ -63,7 +22,7 @@ def GetEventID(trn):
 		trn = str(data["entities"]["event"]["id"])
 	return(trn)
 #retrieve startgg phases with the url
-def PhasesBySlug(slug):
+def PhasesBySlug(slug, skey):
     query = """query PhasesBySlug
     {{
         tournament(slug: "{slug}")
@@ -98,9 +57,9 @@ def PhasesBySlug(slug):
             }}
         }}
     }}""".format(slug = slug)
-    return make_query(query)
+    return SPO.make_query(query, skey)
 #retrieve entrants and their descriminators with event ID, usually from GetEventID
-def ParseEntrants(page, perPage, eventId):
+def ParseEntrants(page, perPage, eventId, skey):
 		query = """query EventEntrants
 		{{
 			event(id: {eventId})
@@ -134,9 +93,9 @@ def ParseEntrants(page, perPage, eventId):
 				}}
 			}}
 		}}""".format(page = page, perPage = perPage, eventId = eventId)
-		return make_query(query)
+		return SPO.make_query(query, skey)
 #
-def seeder(mode, burl):
+def seeder(mode, burl, sggGameID, skey):
 	os.chdir('./data')
 	players = {}
 	playersInBracket = {}
@@ -169,7 +128,7 @@ def seeder(mode, burl):
 			print("Give a valid startgg url for your tournament like https://www.start.gg/tournament/mix-masters-online-3-1")
 			print(f"Unexpected {err=}, {type(err)=}")
 			quit()
-		result = ParseEntrants(1,100,eventid).json()
+		result = ParseEntrants(1,100,eventid, skey).json()
 		#result = PhasesBySlug(url).json()
 		#doesn't matter unless troubleshooting bad json data
 		s = open("phasesbyslug.txt", 'w', encoding='utf-8')
@@ -203,8 +162,9 @@ def seeder(mode, burl):
 			print(len(playersInBracket))
 			for key in playersInBracket:
 				i += 1
+				sname = SPO.getPlayerName("\"user/" + key[0] + "\"", skey)
 				s.write("%s\n" % str(key[0]))
-				print("%s" % str(key[0]))
+				print("%s,%s" % (str(key[0]),sname))
 			s.close()
 		os.chdir("../")
 		#if error is thrown on opening input file put it in data/ folder but don't include data/ when specifying file name

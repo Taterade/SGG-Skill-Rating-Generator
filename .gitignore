@@ -6,3 +6,5 @@ data
 config.txt
 #ignore pycache
 __pycache__
+#just no
+.fuse_hidden*
